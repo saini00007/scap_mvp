@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SCAP Compliance Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    h2 { color: #34495e; margin-top: 20px; }
+    .summary { margin: 20px 0; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .pass { color: green; }
+    .fail { color: red; }
+    .error { color: orange; }
+    .critical { background-color: #ffdddd; }
+    .high { background-color: #ffe6e6; }
+    .medium { background-color: #ffffcc; }
+    .low { background-color: #e6ffe6; }
+    .progress-container { width: 100%; background-color: #f1f1f1; border-radius: 5px; }
+    .progress-bar { height: 30px; border-radius: 5px; text-align: center; line-height: 30px; color: white; }
+  </style>
+</head>
+<body>
+  <h1>SCAP Compliance Report</h1>
+  <h2>System Information</h2>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>ComputerName</td><td>TEST-MACHINE</td></tr>
+    <tr><td>OSVersion</td><td>Microsoft Windows 10 Pro</td></tr>
+    <tr><td>LastBootTime</td><td>2023-01-01T12:00:00Z</td></tr>
+    <tr><td>InstallDate</td><td>2022-01-01T00:00:00Z</td></tr>
+  </table>
+  <h2>Scan Summary</h2>
+  <div class='summary'>
+    <p><strong>Scan Time:</strong> 2025-07-12_21-32-36</p>
+    <p><strong>Total Rules:</strong> 5</p>
+    <div class='progress-container'>
+      <div class='progress-bar' style='width: 0.0%; background-color: #f44336;'>
+        0.00% Compliant
+      </div>
+    </div>
+  </div>
+  <h2>Results by Severity</h2>
+  <table>
+    <tr><th>Severity</th><th>Total</th><th>Pass</th><th>Fail</th><th>Error</th><th>Compliance %</th></tr>
+    <tr class='high'>
+      <td>HIGH</td>
+      <td>3</td>
+      <td class='pass'>0</td>
+      <td class='fail'>3</td>
+      <td class='error'>0</td>
+      <td>0.00%</td>
+    </tr>
+    <tr class='medium'>
+      <td>MEDIUM</td>
+      <td>2</td>
+      <td class='pass'>0</td>
+      <td class='fail'>2</td>
+      <td class='error'>0</td>
+      <td>0.00%</td>
+    </tr>
+  </table>
+  <h2>Failed Checks</h2>
+  <table>
+    <tr><th>Rule</th><th>Severity</th><th>Expected</th><th>Actual</th>
+<th>Evidence</th>
+</tr>
+    <tr class='medium'>
+      <td>Domain-joined systems must use Windows 11 Enterprise Edition 64-bit version.</td>
+      <td>MEDIUM</td>
+      <td>Test expected value</td>
+      <td>Test actual value</td>
+      <td>Test evidence</td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 information systems must use BitLocker to encrypt all disks to protect the confidentiality and integrity of all information at rest.</td>
+      <td>HIGH</td>
+      <td>Test expected value</td>
+      <td>Test actual value</td>
+      <td>Test evidence</td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 systems must use a BitLocker PIN for pre-boot authentication.</td>
+      <td>HIGH</td>
+      <td>Test expected value</td>
+      <td>Test actual value</td>
+      <td>Test evidence</td>
+    </tr>
+    <tr class='medium'>
+      <td>Windows 11 systems must use a BitLocker PIN with a minimum length of six digits for pre-boot authentication.</td>
+      <td>MEDIUM</td>
+      <td>Test expected value</td>
+      <td>Test actual value</td>
+      <td>Test evidence</td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 systems must be maintained at a supported servicing level.</td>
+      <td>HIGH</td>
+      <td>Test expected value</td>
+      <td>Test actual value</td>
+      <td>Test evidence</td>
+    </tr>
+  </table>
+  <h2>All Checks</h2>
+  <table>
+    <tr><th>Rule</th><th>Severity</th><th>Status</th><th>Description</th></tr>
+    <tr class='medium'>
+      <td>Domain-joined systems must use Windows 11 Enterprise Edition 64-bit version.</td>
+      <td>MEDIUM</td>
+      <td class='fail'>FAIL</td>
+      <td><VulnDiscussion>Features such as Credential Guard use virtualization-based security to protect information that could be used in credential theft attacks if compromised. There are a number of system requirements that must be met in order for Credential Guard to be configured and enabled properly. Virtualization-based security and Credential Guard are only available with Windows 11 Enterprise 64-bit version.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 information systems must use BitLocker to encrypt all disks to protect the confidentiality and integrity of all information at rest.</td>
+      <td>HIGH</td>
+      <td class='fail'>FAIL</td>
+      <td><VulnDiscussion>If data at rest is unencrypted, it is vulnerable to disclosure. Even if the operating system enforces permissions on data access, an adversary can remove non-volatile memory and read it directly, thereby circumventing operating system controls. Encrypting the data ensures that confidentiality is protected even when the operating system is not running.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 systems must use a BitLocker PIN for pre-boot authentication.</td>
+      <td>HIGH</td>
+      <td class='fail'>FAIL</td>
+      <td><VulnDiscussion>If data at rest is unencrypted, it is vulnerable to disclosure. Even if the operating system enforces permissions on data access, an adversary can remove non-volatile memory and read it directly, thereby circumventing operating system controls. Encrypting the data ensures that confidentiality is protected even when the operating system is not running. Pre-boot authentication prevents unauthorized users from accessing encrypted drives.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>Windows 11 systems must use a BitLocker PIN with a minimum length of six digits for pre-boot authentication.</td>
+      <td>MEDIUM</td>
+      <td class='fail'>FAIL</td>
+      <td><VulnDiscussion>If data at rest is unencrypted, it is vulnerable to disclosure. Even if the operating system enforces permissions on data access, an adversary can remove non-volatile memory and read it directly, thereby circumventing operating system controls. Encrypting the data ensures that confidentiality is protected even when the operating system is not running. Pre-boot authentication prevents unauthorized users from accessing encrypted drives. Increasing the pin length requires a greater number of guesses for an attacker.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 systems must be maintained at a supported servicing level.</td>
+      <td>HIGH</td>
+      <td class='fail'>FAIL</td>
+      <td><VulnDiscussion>Windows 11 is maintained by Microsoft at servicing levels for specific periods of time to support Windows as a Service. Systems at unsupported servicing levels or releases will not receive security updates for new vulnerabilities which leaves them subject to exploitation.
+
+New versions with feature updates are planned to be released on a semi-annual basis with an estimated support timeframe of 18 to 30 months depending on the release. Support for previously released versions has been extended for Enterprise editions.
+
+A separate servicing branch intended for special purpose systems is the Long-Term Servicing Channel (LTSC, formerly Branch - LTSB) which will receive security updates for 10 years but excludes feature updates.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+  </table>
+  <div style='margin-top: 30px; text-align: center; color: #777;'>
+    <p>Generated by SCAP MVP Scanner</p>
+    <p>Report Date: 2025-07-12 21:32:36</p>
+  </div>
+</body>
+</html>

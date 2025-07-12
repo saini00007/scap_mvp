@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="xccdf_gov.nist_benchmark_windows10">
+  <status>draft</status>
+  <title>Windows 10 Security Benchmark</title>
+  <description>Basic security rules for Windows 10 systems</description>
+  
+  <Group id="xccdf_gov.nist_group_system_settings">
+    <title>System Settings</title>
+    <description>Security settings for the Windows system</description>
+    
+    <Rule id="xccdf_gov.nist_rule_password_length" severity="high">
+      <title>Password Minimum Length</title>
+      <description>Passwords must be at least 8 characters long</description>
+      <check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <check-content-ref href="sample_oval.xml" name="oval:gov.nist.windows:def:1"/>
+      </check>
+    </Rule>
+    
+    <Rule id="xccdf_gov.nist_rule_firewall_enabled" severity="high">
+      <title>Windows Firewall Enabled</title>
+      <description>Windows Firewall service must be running</description>
+      <check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <check-content-ref href="sample_oval.xml" name="oval:gov.nist.windows:def:2"/>
+      </check>
+    </Rule>
+    
+    <Rule id="xccdf_gov.nist_rule_auto_updates" severity="medium">
+      <title>Automatic Updates Enabled</title>
+      <description>Windows automatic updates must be enabled</description>
+      <check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <check-content-ref href="sample_oval.xml" name="oval:gov.nist.windows:def:3"/>
+      </check>
+    </Rule>
+  </Group>
+  
+  <Group id="xccdf_gov.nist_group_user_settings">
+    <title>User Settings</title>
+    <description>Security settings for user accounts</description>
+    
+    <Rule id="xccdf_gov.nist_rule_guest_disabled" severity="medium">
+      <title>Guest Account Disabled</title>
+      <description>The Guest user account must be disabled</description>
+      <check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <check-content-ref href="sample_oval.xml" name="oval:gov.nist.windows:def:4"/>
+      </check>
+    </Rule>
+    
+    <Rule id="xccdf_gov.nist_rule_security_log_size" severity="low">
+      <title>Security Log Size</title>
+      <description>Security event log must be configured with adequate size</description>
+      <check system="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+        <check-content-ref href="sample_oval.xml" name="oval:gov.nist.windows:def:5"/>
+      </check>
+    </Rule>
+  </Group>
+</Benchmark> 

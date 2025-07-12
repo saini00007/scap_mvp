@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SCAP Compliance Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    h2 { color: #34495e; margin-top: 20px; }
+    .summary { margin: 20px 0; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .pass { color: green; }
+    .fail { color: red; }
+    .error { color: orange; }
+    .critical { background-color: #ffdddd; }
+    .high { background-color: #ffe6e6; }
+    .medium { background-color: #ffffcc; }
+    .low { background-color: #e6ffe6; }
+    .progress-container { width: 100%; background-color: #f1f1f1; border-radius: 5px; }
+    .progress-bar { height: 30px; border-radius: 5px; text-align: center; line-height: 30px; color: white; }
+  </style>
+</head>
+<body>
+  <h1>SCAP Compliance Report</h1>
+  <h2>System Information</h2>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>ComputerName</td><td>LAPTOP-KT5OC836</td></tr>
+    <tr><td>OSVersion</td><td>Microsoft Windows 11 Home Single Language</td></tr>
+    <tr><td>LastBootTime</td><td>/Date(1752169520500)/</td></tr>
+    <tr><td>InstallDate</td><td>/Date(1746351774000)/</td></tr>
+  </table>
+  <h2>Scan Summary</h2>
+  <div class='summary'>
+    <p><strong>Scan Time:</strong> 2025-07-12_21-46-50</p>
+    <p><strong>Total Rules:</strong> 20</p>
+    <div class='progress-container'>
+      <div class='progress-bar' style='width: 0%; background-color: #f44336;'>
+        0.00% Compliant
+      </div>
+    </div>
+  </div>
+  <h2>Results by Severity</h2>
+  <table>
+    <tr><th>Severity</th><th>Total</th><th>Pass</th><th>Fail</th><th>Error</th><th>Compliance %</th></tr>
+    <tr class='high'>
+      <td>HIGH</td>
+      <td>7</td>
+      <td class='pass'>0</td>
+      <td class='fail'>0</td>
+      <td class='error'>7</td>
+      <td>0.00%</td>
+    </tr>
+    <tr class='medium'>
+      <td>MEDIUM</td>
+      <td>13</td>
+      <td class='pass'>0</td>
+      <td class='fail'>0</td>
+      <td class='error'>13</td>
+      <td>0.00%</td>
+    </tr>
+  </table>
+  <h2>Failed Checks</h2>
+  <p>No failed checks!</p>
+  <h2>Checks with Errors</h2>
+  <table>
+    <tr><th>Rule</th><th>Error</th></tr>
+    <tr>
+      <td>The TFTP Client must not be installed on the system.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Local volumes must be formatted using NTFS.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Windows 11 systems must use a BitLocker PIN for pre-boot authentication.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Internet Information System (IIS) or its subcomponents must not be installed on a workstation.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Simple TCP/IP Services must not be installed on the system.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Windows 11 information systems must use BitLocker to encrypt all disks to protect the confidentiality and integrity of all information at rest.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The Telnet Client must not be installed on the system.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Windows 11 systems must be maintained at a supported servicing level.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Windows 11 systems must use a BitLocker PIN with a minimum length of six digits for pre-boot authentication.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Domain-joined systems must use Windows 11 Enterprise Edition 64-bit version.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Data Execution Prevention (DEP) must be configured to at least OptOut.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Structured Exception Handling Overwrite Protection (SEHOP) must be enabled.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The Windows PowerShell 2.0 feature must be disabled on the system.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The Server Message Block (SMB) v1 protocol must be disabled on the system.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The Server Message Block (SMB) v1 protocol must be disabled on the SMB server.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The Server Message Block (SMB) v1 protocol must be disabled on the SMB client.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The Secondary Logon service must be disabled on Windows 11.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>Windows 11 account lockout duration must be configured to 15 minutes or greater.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The number of allowed bad logon attempts must be configured to three or less.</td>
+      <td>Missing test information</td>
+    </tr>
+    <tr>
+      <td>The period of time before the bad logon counter is reset must be configured to 15 minutes.</td>
+      <td>Missing test information</td>
+    </tr>
+  </table>
+  <h2>All Checks</h2>
+  <table>
+    <tr><th>Rule</th><th>Severity</th><th>Status</th><th>Description</th></tr>
+    <tr class='medium'>
+      <td>The TFTP Client must not be installed on the system.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The "TFTP Client" is not installed by default. Some protocols and services do not support required security features, such as encrypting passwords or traffic.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Local volumes must be formatted using NTFS.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The ability to set access permissions and auditing is critical to maintaining the security and proper access controls of a system. To support this, volumes must be formatted using the NTFS file system.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 systems must use a BitLocker PIN for pre-boot authentication.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>If data at rest is unencrypted, it is vulnerable to disclosure. Even if the operating system enforces permissions on data access, an adversary can remove non-volatile memory and read it directly, thereby circumventing operating system controls. Encrypting the data ensures that confidentiality is protected even when the operating system is not running. Pre-boot authentication prevents unauthorized users from accessing encrypted drives.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Internet Information System (IIS) or its subcomponents must not be installed on a workstation.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>IIS is not installed by default. Installation of Internet Information System (IIS) may allow unauthorized internet services to be hosted. Websites must only be hosted on servers that have been designed for that purpose and can be adequately secured.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>Simple TCP/IP Services must not be installed on the system.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>"Simple TCP/IP Services" is not installed by default. Some protocols and services do not support required security features, such as encrypting passwords or traffic.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 information systems must use BitLocker to encrypt all disks to protect the confidentiality and integrity of all information at rest.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>If data at rest is unencrypted, it is vulnerable to disclosure. Even if the operating system enforces permissions on data access, an adversary can remove non-volatile memory and read it directly, thereby circumventing operating system controls. Encrypting the data ensures that confidentiality is protected even when the operating system is not running.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The Telnet Client must not be installed on the system.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The "Telnet Client" is not installed by default. Some protocols and services do not support required security features, such as encrypting passwords or traffic.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Windows 11 systems must be maintained at a supported servicing level.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>Windows 11 is maintained by Microsoft at servicing levels for specific periods of time to support Windows as a Service. Systems at unsupported servicing levels or releases will not receive security updates for new vulnerabilities which leaves them subject to exploitation.
+
+New versions with feature updates are planned to be released on a semi-annual basis with an estimated support timeframe of 18 to 30 months depending on the release. Support for previously released versions has been extended for Enterprise editions.
+
+A separate servicing branch intended for special purpose systems is the Long-Term Servicing Channel (LTSC, formerly Branch - LTSB) which will receive security updates for 10 years but excludes feature updates.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>Windows 11 systems must use a BitLocker PIN with a minimum length of six digits for pre-boot authentication.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>If data at rest is unencrypted, it is vulnerable to disclosure. Even if the operating system enforces permissions on data access, an adversary can remove non-volatile memory and read it directly, thereby circumventing operating system controls. Encrypting the data ensures that confidentiality is protected even when the operating system is not running. Pre-boot authentication prevents unauthorized users from accessing encrypted drives. Increasing the pin length requires a greater number of guesses for an attacker.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>Domain-joined systems must use Windows 11 Enterprise Edition 64-bit version.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>Features such as Credential Guard use virtualization-based security to protect information that could be used in credential theft attacks if compromised. There are a number of system requirements that must be met in order for Credential Guard to be configured and enabled properly. Virtualization-based security and Credential Guard are only available with Windows 11 Enterprise 64-bit version.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Data Execution Prevention (DEP) must be configured to at least OptOut.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>Attackers are constantly looking for vulnerabilities in systems and applications. Data Execution Prevention (DEP) prevents harmful code from running in protected memory locations reserved for Windows and other programs.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='high'>
+      <td>Structured Exception Handling Overwrite Protection (SEHOP) must be enabled.</td>
+      <td>HIGH</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>Attackers are constantly looking for vulnerabilities in systems and applications. Structured Exception Handling Overwrite Protection (SEHOP) blocks exploits that use the Structured Exception Handling overwrite technique, a common buffer overflow attack.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The Windows PowerShell 2.0 feature must be disabled on the system.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>Windows PowerShell 5.0 added advanced logging features which can provide additional detail when malware has been run on a system. Disabling the Windows PowerShell 2.0 mitigates against a downgrade attack that evades the Windows PowerShell 5.0 script block logging feature.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The Server Message Block (SMB) v1 protocol must be disabled on the system.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>SMBv1 is a legacy protocol that uses the MD5 algorithm as part of SMB. MD5 is known to be vulnerable to a number of attacks such as collision and preimage attacks as well as not being FIPS compliant.
+
+Disabling SMBv1 support may prevent access to file or print sharing resources with systems or devices that only support SMBv1. File shares and print services hosted on Windows Server 2003 are an example, however Windows Server 2003 is no longer a supported operating system. Some older Network Attached Storage (NAS) devices may only support SMBv1.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The Server Message Block (SMB) v1 protocol must be disabled on the SMB server.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>SMBv1 is a legacy protocol that uses the MD5 algorithm as part of SMB. MD5 is known to be vulnerable to a number of attacks such as collision and preimage attacks as well as not being FIPS compliant.
+
+Disabling SMBv1 support may prevent access to file or print sharing resources with systems or devices that only support SMBv1. File shares and print services hosted on Windows Server 2003 are an example, however Windows Server 2003 is no longer a supported operating system. Some older network attached devices may only support SMBv1.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The Server Message Block (SMB) v1 protocol must be disabled on the SMB client.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>SMBv1 is a legacy protocol that uses the MD5 algorithm as part of SMB. MD5 is known to be vulnerable to a number of attacks such as collision and preimage attacks as well as not being FIPS compliant.
+
+Disabling SMBv1 support may prevent access to file or print sharing resources with systems or devices that only support SMBv1. File shares and print services hosted on Windows Server 2003 are an example, however Windows Server 2003 is no longer a supported operating system. Some older network attached devices may only support SMBv1.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The Secondary Logon service must be disabled on Windows 11.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The Secondary Logon service provides a means for entering alternate credentials, typically used to run commands with elevated privileges. Using privileged credentials in a standard user session can expose those credentials to theft.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>Windows 11 account lockout duration must be configured to 15 minutes or greater.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The account lockout feature, when enabled, prevents brute-force password attacks on the system. This parameter specifies the amount of time that an account will remain locked after the specified number of failed logon attempts.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The number of allowed bad logon attempts must be configured to three or less.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The account lockout feature, when enabled, prevents brute-force password attacks on the system. The higher this value is, the less effective the account lockout feature will be in protecting the local system. The number of bad logon attempts must be reasonably small to minimize the possibility of a successful password attack, while allowing for honest errors made during a normal user logon.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+    <tr class='medium'>
+      <td>The period of time before the bad logon counter is reset must be configured to 15 minutes.</td>
+      <td>MEDIUM</td>
+      <td class='error'>ERROR</td>
+      <td><VulnDiscussion>The account lockout feature, when enabled, prevents brute-force password attacks on the system. This parameter specifies the period of time that must pass after failed logon attempts before the counter is reset to 0. The smaller this value is, the less effective the account lockout feature will be in protecting the local system.</VulnDiscussion><FalsePositives></FalsePositives><FalseNegatives></FalseNegatives><Documentable>false</Documentable><Mitigations></Mitigations><SeverityOverrideGuidance></SeverityOverrideGuidance><PotentialImpacts></PotentialImpacts><ThirdPartyTools></ThirdPartyTools><MitigationControl></MitigationControl><Responsibility></Responsibility><IAControls></IAControls></td>
+    </tr>
+  </table>
+  <div style='margin-top: 30px; text-align: center; color: #777;'>
+    <p>Generated by SCAP MVP Scanner</p>
+    <p>Report Date: 2025-07-12 21:46:50</p>
+  </div>
+</body>
+</html>
