@@ -1,0 +1,714 @@
+<!DOCTYPE html><html lang='en'>
+<head><meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Security Compliance Report</title>
+<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css'>
+<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0'></script>
+<style>
+
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            color: var(--dark);
+            background-color: var(--gray-100);
+            padding: 0;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .header {
+            background-color: var(--white);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 1.5rem 0;
+        }
+        
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo i {
+            font-size: 1.75rem;
+        }
+        
+        .timestamp {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card {
+            background-color: var(--white);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .section-title i {
+            color: var(--primary);
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            background-color: var(--white);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .summary-card .title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .primary {
+            color: var(--primary);
+        }
+        
+        .success {
+            color: var(--success);
+        }
+        
+        .danger {
+            color: var(--danger);
+        }
+        
+        .warning {
+            color: var(--warning);
+        }
+        
+        .flex-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            max-width: 100%;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container.small {
+            height: 220px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .badge.primary {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+        
+        .badge.success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        
+        .badge.danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+        
+        .badge.warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
+        .badge i {
+            margin-right: 0.25rem;
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--gray-200);
+            border-radius: 1rem;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            transition: width 0.4s ease;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0 2rem;
+            font-size: 0.875rem;
+        }
+        
+        th {
+            text-align: left;
+            padding: 1rem;
+            background-color: var(--gray-100);
+            font-weight: 600;
+            color: var(--gray-500);
+            border-bottom: 2px solid var(--gray-200);
+            position: sticky;
+            top: 71px;
+        }
+        
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: var(--gray-100);
+        }
+        
+        .status-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 12px;
+            margin-right: 0.5rem;
+        }
+        
+        .pass .status-icon {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .fail .status-icon {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        .error .status-icon {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+        
+        .severity-high {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .severity-medium {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .severity-low {
+            border-left: 4px solid var(--success);
+        }
+        
+        .expandable-row {
+            cursor: pointer;
+        }
+        
+        .detail-row {
+            background-color: var(--gray-100);
+            display: none;
+        }
+        
+        .detail-row.active {
+            display: table-row;
+        }
+        
+        .detail-content {
+            padding: 1.5rem;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .detail-item {
+            background-color: var(--white);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            font-weight: 500;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--gray-300);
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .action-btn:hover {
+            background-color: var(--primary-light);
+        }
+        
+        .action-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .footer {
+            background-color: var(--dark);
+            color: var(--white);
+            padding: 2rem 0;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+        }
+        
+        .footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-weight: 500;
+        }
+        
+        @media print {
+            .header {
+                position: static;
+            }
+            
+            .card, .summary-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .action-btn {
+                display: none;
+            }
+            
+            th {
+                position: static;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header .container {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 0.75rem;
+            }
+            
+            th, td {
+                padding: 0.75rem;
+            }
+        }
+        
+</style></head><body>
+<header class='header'>
+<div class='container'>
+<div class='logo'><i class='fas fa-shield-alt'></i>Security Compliance Report</div>
+<div class='timestamp'><i class='fas fa-calendar-alt'></i>Generated on 2025-07-16 06:08:13</div>
+</div>
+</header>
+<main class='container' style='padding-top: 1.5rem;'>
+<div class='card'>
+<h2 class='section-title'><i class='fas fa-server'></i>System Information</h2>
+<div class='info-grid'>
+<div class='info-item'>
+<div class='info-label'>Hostname</div>
+<div class='info-value'>TEST-PC</div>
+</div>
+<div class='info-item'>
+<div class='info-label'>OS</div>
+<div class='info-value'>Windows 10 Pro</div>
+</div>
+<div class='info-item'>
+<div class='info-label'>Uptime</div>
+<div class='info-value'>5 days</div>
+</div>
+</div>
+</div>
+<div class='card'>
+<h2 class='section-title'><i class='fas fa-chart-pie'></i>Compliance Overview</h2>
+<div class='summary-grid'>
+<div class='summary-card'>
+<div class='title'><i class='fas fa-percentage'></i>Overall Compliance</div>
+<div class='value warning'>50.0%</div>
+<div class='progress-container'>
+<div class='progress-bar warning' style='width: 50.0%;'></div>
+</div>
+</div>
+<div class='summary-card'>
+<div class='title'><i class='fas fa-list-check'></i>Total Checks</div>
+<div class='value primary'>2</div>
+</div>
+<div class='summary-card'>
+<div class='title'><i class='fas fa-check'></i>Passed</div>
+<div class='value success'>1</div>
+</div>
+<div class='summary-card'>
+<div class='title'><i class='fas fa-xmark'></i>Failed</div>
+<div class='value danger'>1</div>
+</div>
+</div>
+<div class='flex-row'>
+<div class='chart-container' style='flex: 1;'><canvas id='summaryChart'></canvas></div>
+<div class='chart-container' style='flex: 1;'><canvas id='severityChart'></canvas></div>
+</div>
+</div>
+<div class='card'>
+<h2 class='section-title'><i class='fas fa-layer-group'></i>Severity Analysis</h2>
+<table>
+<thead><tr>
+<th>Severity</th><th>Total</th><th>Pass</th><th>Fail</th><th>Error</th><th>Compliance %</th>
+</tr></thead><tbody>
+<tr>
+<td><span class='badge danger'><i class='fas fa-exclamation-triangle'></i>HIGH</span></td>
+<td>2</td>
+<td class='success'>1</td>
+<td class='danger'>1</td>
+<td class='warning'>0</td>
+<td>
+<div class='flex-between'>
+<span>50.0%</span>
+<div class='progress-container' style='width: 100px; margin: 0 0 0 10px;'>
+<div class='progress-bar danger' style='width: 50.0%;'></div>
+</div>
+</div>
+</td>
+</tr>
+<tr>
+<td><span class='badge warning'><i class='fas fa-exclamation-triangle'></i>MEDIUM</span></td>
+<td>0</td>
+<td class='success'>0</td>
+<td class='danger'>0</td>
+<td class='warning'>0</td>
+<td>
+<div class='flex-between'>
+<span>0.0%</span>
+<div class='progress-container' style='width: 100px; margin: 0 0 0 10px;'>
+<div class='progress-bar warning' style='width: 0%;'></div>
+</div>
+</div>
+</td>
+</tr>
+<tr>
+<td><span class='badge success'><i class='fas fa-exclamation-triangle'></i>LOW</span></td>
+<td>0</td>
+<td class='success'>0</td>
+<td class='danger'>0</td>
+<td class='warning'>0</td>
+<td>
+<div class='flex-between'>
+<span>0.0%</span>
+<div class='progress-container' style='width: 100px; margin: 0 0 0 10px;'>
+<div class='progress-bar success' style='width: 0%;'></div>
+</div>
+</div>
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class='card'>
+<h2 class='section-title'><i class='fas fa-triangle-exclamation'></i>Failed Controls</h2>
+<table id='failedChecksTable'>
+<thead><tr>
+<th>Status</th><th>Rule</th><th>Severity</th><th>Expected</th><th>Actual</th><th>Actions</th>
+</tr></thead><tbody>
+<tr class='expandable-row severity-high' data-row='0'>
+<td class='fail'><span class='status-icon'><i class='fas fa-xmark'></i></span></td>
+<td>Password Minimum Length</td>
+<td><span class='badge danger'>HIGH</span></td>
+<td>>=8</td>
+<td>6</td>
+<td><button class='badge primary' onclick='toggleDetails(0)'><i class='fas fa-eye'></i>Details</button></td>
+</tr>
+<tr id='detail-row-0' class='detail-row'>
+<td colspan='6'>
+<div class='detail-content'>
+<div class='detail-item'>
+<div class='detail-label'>Description</div>
+<div class='detail-value'>Ensure passwords are at least 8 characters</div>
+</div>
+<div class='detail-item'>
+<div class='detail-label'>Evidence</div>
+<div class='detail-value'>Registry value shows 6</div>
+</div>
+<div class='detail-item'>
+<div class='detail-label'>Remediation</div>
+<div class='detail-value'>Update password policy settings in Group Policy or local security policy. Navigate to Computer Configuration > Windows Settings > Security Settings > Account Policies > Password Policy and set the minimum password length according to your organization's requirements.</div>
+</div>
+</div>
+</td>
+</tr>
+</tbody></table>
+</div>
+<div class='flex-between' style='margin-top: 2rem;'>
+<button class='action-btn' onclick='window.print()'><i class='fas fa-download'></i>Export PDF</button>
+</div>
+</main>
+<footer class='footer'>
+<div class='container'>
+<div>SCAP MVP Security Compliance Scanner</div>
+<div>Report ID: 2025-07-16_06-08-13</div>
+</div>
+</footer>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('summaryChart').getContext('2d');
+  const summaryChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Pass', 'Fail', 'Error'],
+      datasets: [{
+        data: [1, 1, 0],
+        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+        borderRadius: 8,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Check Results',
+          font: { size: 16, weight: 'bold' }
+        },
+        datalabels: {
+          color: '#fff',
+          font: { weight: 'bold' },
+          formatter: (value) => value > 0 ? value : ''
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { display: false }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  const severityCtx = document.getElementById('severityChart').getContext('2d');
+  const severityChart = new Chart(severityCtx, {
+    type: 'bar',
+    data: {
+      labels: ["High", "Medium", "Low"],
+      datasets: [
+        {
+          label: 'Pass',
+          data: [1, 0, 0],
+          backgroundColor: '#10b981',
+          borderRadius: 8,
+          borderWidth: 0
+        },
+        {
+          label: 'Fail',
+          data: [1, 0, 0],
+          backgroundColor: '#ef4444',
+          borderRadius: 8,
+          borderWidth: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        title: {
+          display: true,
+          text: 'Results by Severity',
+          font: { size: 16, weight: 'bold' }
+        },
+        datalabels: {
+          color: '#fff',
+          font: { weight: 'bold' },
+          formatter: (value) => value > 0 ? value : ''
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { display: false },
+          stacked: true
+        },
+        x: {
+          grid: { display: false },
+          stacked: true
+        }
+      }
+    }
+  });
+
+        });
+        
+        function toggleDetails(rowId) {
+            const detailRow = document.getElementById(`detail-row-${rowId}`);
+            detailRow.classList.toggle('active');
+        }
+        
+</script>
+</body></html>

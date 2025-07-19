@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Windows Scanner for SCAP MVP
+Windows Scanner for SCAP MVP - Fixed registry handling
 Connects to Windows systems and retrieves security settings
 """
 
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class WindowsScanner:
-    """Scanner for Windows systems using WinRM"""
+    """Scanner for Windows systems using WinRM with improved registry handling"""
     
     def __init__(self, target: str, username: Optional[str] = None, password: Optional[str] = None, 
                  timeout: int = 60, use_ssl: bool = False):
@@ -75,10 +75,8 @@ class WindowsScanner:
             # Create session
             logger.info(f"Connecting to {self.target} via WinRM...")
             logger.info(f"Using endpoint: {endpoint}")
-            logger.info(f"Authentication: {'Yes' if self.username and self.password else 'No'}")
             
             # For localhost connections without credentials, we need to provide empty strings
-            # instead of None because the winrm library tries to unpack None
             if self.target.lower() in ('localhost', '127.0.0.1') and not (self.username and self.password):
                 logger.info("Using NTLM authentication for localhost with empty credentials")
                 self.session = winrm.Session(
@@ -108,9 +106,6 @@ class WindowsScanner:
             
         except Exception as e:
             logger.error(f"Error connecting to {self.target}: {e}")
-            logger.error(f"Exception type: {type(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
             return False
             
     def _run_local_powershell(self, command: str) -> Dict[str, Any]:
@@ -128,7 +123,7 @@ class WindowsScanner:
             with tempfile.NamedTemporaryFile(suffix='.ps1', delete=False) as temp:
                 temp_path = temp.name
                 # Write the command to the temporary file
-                with open(temp_path, 'w') as f:
+                with open(temp_path, 'w', encoding='utf-8') as f:
                     f.write(command)
                     
             # Execute the PowerShell script
@@ -247,9 +242,49 @@ class WindowsScanner:
             logger.error(f"Error getting system info: {e}")
             return {}
     
+    def _sanitize_registry_name(self, name: str) -> str:
+        """
+        Sanitize registry value name for PowerShell
+        
+        Args:
+            name: Registry value name
+            
+        Returns:
+            str: Sanitized name safe for PowerShell
+        """
+        if not name or name.lower() in ['(default)', 'default']:
+            return '(Default)'
+        
+        # Remove or escape problematic characters
+        # Replace backslashes and other special characters
+        sanitized = name.replace('\\', '\\\\')
+        sanitized = sanitized.replace('*', '`*')
+        sanitized = sanitized.replace('?', '`?')
+        sanitized = sanitized.replace('[', '`[')
+        sanitized = sanitized.replace(']', '`]')
+        
+        return sanitized
+    
+    def _escape_powershell_string(self, text: str) -> str:
+        """
+        Escape a string for safe use in PowerShell
+        
+        Args:
+            text: Text to escape
+            
+        Returns:
+            str: Escaped text
+        """
+        if not text:
+            return ""
+        
+        # Escape single quotes by doubling them
+        escaped = text.replace("'", "''")
+        return escaped
+    
     def check_registry(self, hive: str, key: str, name: str) -> Dict[str, Any]:
         """
-        Check a registry value
+        Check a registry value with improved error handling
         
         Args:
             hive: Registry hive (e.g., HKEY_LOCAL_MACHINE)
@@ -266,45 +301,98 @@ class WindowsScanner:
         try:
             logger.debug(f"Checking registry: {hive}\\{key}\\{name}")
             
-            # Build PowerShell command to check registry
-            command = f"""
-            try {{
-                # First check if the key exists
-                $keyExists = Test-Path -Path "Registry::{hive}\\{key}"
-                if (-not $keyExists) {{
+            # Sanitize inputs
+            safe_hive = self._escape_powershell_string(hive)
+            safe_key = self._escape_powershell_string(key)
+            safe_name = self._sanitize_registry_name(name)
+            
+            # Build PowerShell command with better error handling
+            if safe_name == '(Default)':
+                # Special handling for default value
+                command = f"""
+                try {{
+                    $regPath = "Registry::{safe_hive}\\{safe_key}"
+                    $keyExists = Test-Path -Path $regPath
+                    if (-not $keyExists) {{
+                        $result = @{{
+                            "exists" = $false
+                            "error" = "Registry key does not exist"
+                        }}
+                        $result | ConvertTo-Json -Compress
+                        exit
+                    }}
+                    
+                    # Get default value
+                    $regKey = Get-Item -Path $regPath -ErrorAction Stop
+                    $defaultValue = $regKey.GetValue("")
+                    if ($defaultValue -eq $null) {{
+                        $result = @{{
+                            "exists" = $false
+                            "error" = "Default value is null"
+                        }}
+                    }} else {{
+                        $result = @{{
+                            "exists" = $true
+                            "value" = [string]$defaultValue
+                            "type" = $defaultValue.GetType().Name
+                        }}
+                    }}
+                    $result | ConvertTo-Json -Compress
+                }} catch {{
+                    $result = @{{
+                        "exists" = $false
+                        "error" = $_.Exception.Message
+                    }}
+                    $result | ConvertTo-Json -Compress
+                }}
+                """
+            else:
+                # Regular named value
+                command = f"""
+                try {{
+                    $regPath = "Registry::{safe_hive}\\{safe_key}"
+                    $keyExists = Test-Path -Path $regPath
+                    if (-not $keyExists) {{
+                        $result = @{{
+                            "exists" = $false
+                            "error" = "Registry key does not exist"
+                        }}
+                        $result | ConvertTo-Json -Compress
+                        exit
+                    }}
+                    
+                    # Try to get the specific value
+                    $regKey = Get-ItemProperty -Path $regPath -Name '{safe_name}' -ErrorAction Stop
+                    $value = $regKey.'{safe_name}'
+                    $result = @{{
+                        "exists" = $true
+                        "value" = [string]$value
+                        "type" = $value.GetType().Name
+                    }}
+                    $result | ConvertTo-Json -Compress
+                }} catch [System.Management.Automation.PSArgumentException] {{
+                    # Value doesn't exist
+                    $result = @{{
+                        "exists" = $false
+                        "error" = "Registry value does not exist"
+                    }}
+                    $result | ConvertTo-Json -Compress
+                }} catch [System.Management.Automation.ItemNotFoundException] {{
+                    # Key doesn't exist
                     $result = @{{
                         "exists" = $false
                         "error" = "Registry key does not exist"
                     }}
-                    $result | ConvertTo-Json
-                    exit
+                    $result | ConvertTo-Json -Compress
+                }} catch {{
+                    # Other errors
+                    $result = @{{
+                        "exists" = $false
+                        "error" = $_.Exception.Message
+                    }}
+                    $result | ConvertTo-Json -Compress
                 }}
-                
-                # Then try to get the value
-                $regKey = Get-ItemProperty -Path "Registry::{hive}\\{key}" -Name {name} -ErrorAction Stop
-                $value = $regKey.{name}
-                $result = @{{
-                    "exists" = $true
-                    "value" = "$value"
-                    "type" = $value.GetType().Name
-                }}
-                $result | ConvertTo-Json
-            }} catch [System.Management.Automation.ItemNotFoundException] {{
-                # Key exists but value doesn't
-                $result = @{{
-                    "exists" = $false
-                    "error" = "Registry value does not exist"
-                }}
-                $result | ConvertTo-Json
-            }} catch {{
-                # Other errors
-                $result = @{{
-                    "exists" = $false
-                    "error" = $_.Exception.Message
-                }}
-                $result | ConvertTo-Json
-            }}
-            """
+                """
             
             # Execute command
             result = self.run_powershell(command)
@@ -315,8 +403,9 @@ class WindowsScanner:
                     data = json.loads(result['stdout'])
                     logger.debug(f"Registry check result: {data}")
                     return data
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as e:
                     logger.error(f"Failed to parse registry check JSON: {result['stdout']}")
+                    logger.error(f"JSON error: {e}")
             else:
                 logger.error(f"Failed to check registry: {result['stderr']}")
                 
@@ -336,28 +425,32 @@ class WindowsScanner:
         Returns:
             Dict: Service check results
         """
-        if not self.session:
+        if (not hasattr(self, 'session') or self.session is None) and not self.use_direct_powershell:
             logger.error("Not connected to target")
             return {'exists': False, 'status': None, 'start_type': None, 'error': 'Not connected'}
             
         try:
+            safe_service_name = self._escape_powershell_string(service_name)
+            
             command = f"""
             try {{
-                $service = Get-Service -Name '{service_name}' -ErrorAction Stop
-                $wmiService = Get-WmiObject -Class Win32_Service -Filter "Name='{service_name}'" -ErrorAction Stop
+                $service = Get-Service -Name '{safe_service_name}' -ErrorAction Stop
+                $wmiService = Get-WmiObject -Class Win32_Service -Filter "Name='{safe_service_name}'" -ErrorAction Stop
                 
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $true
-                $result | Add-Member -MemberType NoteProperty -Name Status -Value $service.Status
-                $result | Add-Member -MemberType NoteProperty -Name StartType -Value $wmiService.StartMode
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $true
+                    "status" = [string]$service.Status
+                    "start_type" = [string]$wmiService.StartMode
+                }}
+                $result | ConvertTo-Json -Compress
             }} catch {{
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $false
-                $result | Add-Member -MemberType NoteProperty -Name Status -Value $null
-                $result | Add-Member -MemberType NoteProperty -Name StartType -Value $null
-                $result | Add-Member -MemberType NoteProperty -Name Error -Value "Service does not exist"
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $false
+                    "status" = $null
+                    "start_type" = $null
+                    "error" = "Service does not exist"
+                }}
+                $result | ConvertTo-Json -Compress
             }}
             """
             
@@ -388,27 +481,31 @@ class WindowsScanner:
         Returns:
             Dict: User account check results
         """
-        if not self.session:
+        if (not hasattr(self, 'session') or self.session is None) and not self.use_direct_powershell:
             logger.error("Not connected to target")
             return {'exists': False, 'enabled': None, 'error': 'Not connected'}
             
         try:
+            safe_username = self._escape_powershell_string(username)
+            
             command = f"""
             try {{
-                $user = Get-LocalUser -Name '{username}' -ErrorAction Stop
+                $user = Get-LocalUser -Name '{safe_username}' -ErrorAction Stop
                 
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $true
-                $result | Add-Member -MemberType NoteProperty -Name Enabled -Value $user.Enabled
-                $result | Add-Member -MemberType NoteProperty -Name PasswordRequired -Value $user.PasswordRequired
-                $result | Add-Member -MemberType NoteProperty -Name PasswordLastSet -Value $user.PasswordLastSet
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $true
+                    "enabled" = [bool]$user.Enabled
+                    "password_required" = [bool]$user.PasswordRequired
+                    "password_last_set" = [string]$user.PasswordLastSet
+                }}
+                $result | ConvertTo-Json -Compress
             }} catch {{
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $false
-                $result | Add-Member -MemberType NoteProperty -Name Enabled -Value $null
-                $result | Add-Member -MemberType NoteProperty -Name Error -Value "User account does not exist"
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $false
+                    "enabled" = $null
+                    "error" = "User account does not exist"
+                }}
+                $result | ConvertTo-Json -Compress
             }}
             """
             
@@ -439,25 +536,29 @@ class WindowsScanner:
         Returns:
             Dict: File check results
         """
-        if not self.session:
+        if (not hasattr(self, 'session') or self.session is None) and not self.use_direct_powershell:
             logger.error("Not connected to target")
             return {'exists': False, 'error': 'Not connected'}
             
         try:
+            safe_file_path = self._escape_powershell_string(file_path)
+            
             command = f"""
             try {{
-                $file = Get-Item -Path '{file_path}' -ErrorAction Stop
+                $file = Get-Item -Path '{safe_file_path}' -ErrorAction Stop
                 
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $true
-                $result | Add-Member -MemberType NoteProperty -Name Length -Value $file.Length
-                $result | Add-Member -MemberType NoteProperty -Name LastWriteTime -Value $file.LastWriteTime
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $true
+                    "length" = [long]$file.Length
+                    "last_write_time" = [string]$file.LastWriteTime
+                }}
+                $result | ConvertTo-Json -Compress
             }} catch {{
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $false
-                $result | Add-Member -MemberType NoteProperty -Name Error -Value "File does not exist"
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $false
+                    "error" = "File does not exist"
+                }}
+                $result | ConvertTo-Json -Compress
             }}
             """
             
@@ -488,28 +589,32 @@ class WindowsScanner:
         Returns:
             Dict: Event log check results
         """
-        if not self.session:
+        if (not hasattr(self, 'session') or self.session is None) and not self.use_direct_powershell:
             logger.error("Not connected to target")
             return {'exists': False, 'error': 'Not connected'}
             
         try:
+            safe_log_name = self._escape_powershell_string(log_name)
+            
             command = f"""
             try {{
-                $log = Get-WinEvent -ListLog '{log_name}' -ErrorAction Stop
+                $log = Get-WinEvent -ListLog '{safe_log_name}' -ErrorAction Stop
                 
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $true
-                $result | Add-Member -MemberType NoteProperty -Name LogName -Value $log.LogName
-                $result | Add-Member -MemberType NoteProperty -Name FileSize -Value $log.MaximumSizeInBytes
-                $result | Add-Member -MemberType NoteProperty -Name IsEnabled -Value $log.IsEnabled
-                $result | Add-Member -MemberType NoteProperty -Name LogMode -Value $log.LogMode
-                $result | Add-Member -MemberType NoteProperty -Name RecordCount -Value $log.RecordCount
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $true
+                    "log_name" = [string]$log.LogName
+                    "file_size" = [long]$log.MaximumSizeInBytes
+                    "is_enabled" = [bool]$log.IsEnabled
+                    "log_mode" = [string]$log.LogMode
+                    "record_count" = [long]$log.RecordCount
+                }}
+                $result | ConvertTo-Json -Compress
             }} catch {{
-                $result = New-Object PSObject
-                $result | Add-Member -MemberType NoteProperty -Name Exists -Value $false
-                $result | Add-Member -MemberType NoteProperty -Name Error -Value "Event log does not exist"
-                $result | ConvertTo-Json
+                $result = @{{
+                    "exists" = $false
+                    "error" = "Event log does not exist"
+                }}
+                $result | ConvertTo-Json -Compress
             }}
             """
             
@@ -563,4 +668,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

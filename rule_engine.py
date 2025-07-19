@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Rule Engine for SCAP MVP
-Executes security checks based on parsed rules
+Rule Engine for SCAP MVP - Improved for NIST SCAP compatibility
+Executes security checks based on parsed rules with better error handling
 """
 
 import logging
 import concurrent.futures
 import time
+import re
 from typing import Dict, List, Any, Optional, Tuple
 
 from windows_scanner import WindowsScanner
@@ -16,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class RuleEngine:
-    """Engine for executing security checks"""
+    """Engine for executing security checks with improved NIST SCAP support"""
     
     def __init__(self, scanner: WindowsScanner, rules: Dict[str, Any], parallel: int = 4):
         """
@@ -37,33 +38,14 @@ class RuleEngine:
         
     def execute_all_checks(self) -> Dict[str, Any]:
         """
-        Execute all rules in the ruleset
+        Execute all rules in the ruleset with improved error handling
         
         Returns:
             Dict: Dictionary of check results
         """
         if not self.scanner:
             logger.error("Scanner not initialized")
-            return {}
-            
-        # Verify scanner connection
-        if not hasattr(self.scanner, 'use_direct_powershell') and not hasattr(self.scanner, 'session'):
-            logger.error("Scanner is not connected to target")
-            # Create dummy results for all rules
-            results = {}
-            for rule_id, rule in self.rules.items():
-                results[rule_id] = {
-                    'rule_id': rule_id,
-                    'title': rule.get('title', ''),
-                    'description': rule.get('description', ''),
-                    'severity': rule.get('severity', 'unknown'),
-                    'status': 'error',
-                    'message': 'Scanner is not connected to target',
-                    'expected': None,
-                    'actual': None,
-                    'evidence': None
-                }
-            return results
+            return self._create_error_results("Scanner not initialized")
             
         if not self.rules:
             logger.error("No rules to execute")
@@ -75,29 +57,80 @@ class RuleEngine:
         # Reset progress
         self.progress = {'total': len(self.rules), 'completed': 0, 'passed': 0, 'failed': 0, 'error': 0}
         
-        # Test connection before starting parallel execution
-        test_cmd = "Write-Output 'Connection Test'"
-        test_result = self.scanner.run_powershell(test_cmd)
-        if not test_result['success']:
-            logger.error(f"Scanner connection test failed: {test_result['stderr']}")
-            # Create dummy results for all rules
-            results = {}
-            for rule_id, rule in self.rules.items():
-                results[rule_id] = {
-                    'rule_id': rule_id,
-                    'title': rule.get('title', ''),
-                    'description': rule.get('description', ''),
-                    'severity': rule.get('severity', 'unknown'),
-                    'status': 'error',
-                    'message': f"Scanner connection failed: {test_result['stderr']}",
-                    'expected': None,
-                    'actual': None,
-                    'evidence': None
-                }
-            self.results = results
-            return results
+        # Test connection before starting if not in test mode
+        if not self.test_mode:
+            if not self._test_scanner_connection():
+                logger.error("Scanner connection test failed")
+                return self._create_error_results("Scanner connection failed")
         
-        # Execute checks in parallel
+        # Execute checks in parallel (or sequentially for better debugging)
+        if self.parallel > 1 and not self.test_mode:
+            results = self._execute_parallel()
+        else:
+            results = self._execute_sequential()
+        
+        end_time = time.time()
+        duration = end_time - start_time
+        logger.info(f"Scan completed in {duration:.2f} seconds")
+        logger.info(f"Results: {self.progress['passed']} passed, {self.progress['failed']} failed, "
+                   f"{self.progress['error']} errors")
+        
+        self.results = results
+        return results
+    
+    def _test_scanner_connection(self) -> bool:
+        """Test scanner connection"""
+        try:
+            test_cmd = "Write-Output 'Connection Test'"
+            test_result = self.scanner.run_powershell(test_cmd)
+            return test_result['success']
+        except Exception as e:
+            logger.error(f"Scanner connection test error: {e}")
+            return False
+    
+    def _create_error_results(self, error_message: str) -> Dict[str, Any]:
+        """Create error results for all rules"""
+        results = {}
+        for rule_id, rule in self.rules.items():
+            results[rule_id] = {
+                'rule_id': rule_id,
+                'title': rule.get('title', ''),
+                'description': rule.get('description', ''),
+                'severity': rule.get('severity', 'unknown'),
+                'status': 'error',
+                'message': error_message,
+                'expected': None,
+                'actual': None,
+                'evidence': None
+            }
+        return results
+    
+    def _execute_sequential(self) -> Dict[str, Any]:
+      
+        results = {}
+        
+        for rule_id, rule in self.rules.items():
+            try:
+                result = self.execute_check(rule_id, rule)
+                results[rule_id] = result
+                self._update_progress(result)
+                
+                # Log progress every 10 rules
+                if self.progress['completed'] % 10 == 0:
+                    self._log_progress()
+                    
+            except Exception as e:
+                logger.error(f"Error executing rule {rule_id}: {e}")
+                results[rule_id] = self._create_error_result(rule_id, rule, str(e))
+                self.progress['completed'] += 1
+                self.progress['error'] += 1
+        
+        return results
+    
+    def _execute_parallel(self) -> Dict[str, Any]:
+        """Execute checks in parallel"""
+        results = {}
+        
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.parallel) as executor:
             future_to_rule = {executor.submit(self.execute_check, rule_id, rule): rule_id 
                              for rule_id, rule in self.rules.items()}
@@ -106,49 +139,55 @@ class RuleEngine:
                 rule_id = future_to_rule[future]
                 try:
                     result = future.result()
-                    self.results[rule_id] = result
-                    self.progress['completed'] += 1
+                    results[rule_id] = result
+                    self._update_progress(result)
                     
-                    if result['status'] == 'pass':
-                        self.progress['passed'] += 1
-                    elif result['status'] == 'fail':
-                        self.progress['failed'] += 1
-                    else:
-                        self.progress['error'] += 1
-                        
                     # Log progress
                     if self.progress['completed'] % 5 == 0 or self.progress['completed'] == self.progress['total']:
-                        logger.info(f"Progress: {self.progress['completed']}/{self.progress['total']} "
-                                   f"(Pass: {self.progress['passed']}, Fail: {self.progress['failed']}, "
-                                   f"Error: {self.progress['error']})")
+                        self._log_progress()
                         
                 except Exception as e:
                     logger.error(f"Error executing rule {rule_id}: {e}")
-                    self.results[rule_id] = {
-                        'rule_id': rule_id,
-                        'title': self.rules[rule_id].get('title', ''),
-                        'description': self.rules[rule_id].get('description', ''),
-                        'severity': self.rules[rule_id].get('severity', 'unknown'),
-                        'status': 'error',
-                        'message': f"Exception: {str(e)}",
-                        'expected': None,
-                        'actual': None,
-                        'evidence': None
-                    }
+                    results[rule_id] = self._create_error_result(rule_id, self.rules[rule_id], str(e))
                     self.progress['completed'] += 1
                     self.progress['error'] += 1
         
-        end_time = time.time()
-        duration = end_time - start_time
-        logger.info(f"Scan completed in {duration:.2f} seconds")
-        logger.info(f"Results: {self.progress['passed']} passed, {self.progress['failed']} failed, "
-                   f"{self.progress['error']} errors")
+        return results
+    
+    def _update_progress(self, result: Dict[str, Any]):
+        """Update progress counters"""
+        self.progress['completed'] += 1
         
-        return self.results
+        if result['status'] == 'pass':
+            self.progress['passed'] += 1
+        elif result['status'] == 'fail':
+            self.progress['failed'] += 1
+        else:
+            self.progress['error'] += 1
+    
+    def _log_progress(self):
+        """Log current progress"""
+        logger.info(f"Progress: {self.progress['completed']}/{self.progress['total']} "
+                   f"(Pass: {self.progress['passed']}, Fail: {self.progress['failed']}, "
+                   f"Error: {self.progress['error']})")
+    
+    def _create_error_result(self, rule_id: str, rule: Dict[str, Any], error_message: str) -> Dict[str, Any]:
+        """Create an error result for a single rule"""
+        return {
+            'rule_id': rule_id,
+            'title': rule.get('title', ''),
+            'description': rule.get('description', ''),
+            'severity': rule.get('severity', 'unknown'),
+            'status': 'error',
+            'message': f"Exception: {error_message}",
+            'expected': None,
+            'actual': None,
+            'evidence': None
+        }
     
     def execute_check(self, rule_id: str, rule: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Execute a single security check
+        Execute a single security check with improved error handling
         
         Args:
             rule_id: ID of the rule to check
@@ -164,6 +203,7 @@ class RuleEngine:
             'title': rule.get('title', ''),
             'description': rule.get('description', ''),
             'severity': rule.get('severity', 'unknown'),
+            'version': rule.get('version', ''),
             'status': 'error',
             'message': '',
             'expected': None,
@@ -176,12 +216,12 @@ class RuleEngine:
             object_info = rule.get('object_info', {})
             state_info = rule.get('state_info', {})
             
-            if not test_type or not object_info or not state_info:
-                result['message'] = "Missing test information"
+            if not test_type:
+                result['message'] = "Missing test type"
                 return result
             
             # If in test mode, generate mock results
-            if hasattr(self, 'test_mode') and self.test_mode:
+            if self.test_mode:
                 return self._generate_mock_result(rule_id, rule)
                 
             # Execute check based on test type
@@ -189,11 +229,18 @@ class RuleEngine:
                 check_result = self._check_registry(object_info, state_info)
             elif test_type == 'service':
                 check_result = self._check_service(object_info, state_info)
-            elif test_type == 'cmdlet':
+            elif test_type in ['cmdlet', 'powershell']:
                 check_result = self._check_cmdlet(object_info, state_info)
+            elif test_type == 'file':
+                check_result = self._check_file(object_info, state_info)
+            elif test_type == 'eventlog':
+                check_result = self._check_event_log(object_info, state_info)
             else:
-                result['message'] = f"Unsupported test type: {test_type}"
-                return result
+                # For unsupported test types, try to infer from object info
+                check_result = self._infer_and_execute_check(object_info, state_info)
+                if not check_result:
+                    result['message'] = f"Unsupported test type: {test_type}"
+                    return result
                 
             # Update result with check details
             result.update(check_result)
@@ -205,9 +252,44 @@ class RuleEngine:
             result['message'] = f"Exception: {str(e)}"
             return result
     
+    def _infer_and_execute_check(self, object_info: Dict[str, Any], state_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Try to infer the check type from object info and execute it
+        
+        Args:
+            object_info: Object information
+            state_info: State information
+            
+        Returns:
+            Dict: Check result or None if cannot infer
+        """
+        try:
+            # Check if this looks like a registry check
+            if any(key in object_info for key in ['hive', 'key', 'name']):
+                logger.debug("Inferred registry check from object info")
+                return self._check_registry(object_info, state_info)
+            
+            # Check if this looks like a service check
+            if 'service_name' in object_info or 'service' in str(object_info):
+                logger.debug("Inferred service check from object info")
+                return self._check_service(object_info, state_info)
+            
+            # Check if this looks like a file check
+            if any(key in object_info for key in ['path', 'file_path', 'filename']):
+                logger.debug("Inferred file check from object info")
+                return self._check_file(object_info, state_info)
+            
+            # Default to registry check for unknown types
+            logger.debug("Defaulting to registry check for unknown type")
+            return self._check_registry(object_info, state_info)
+            
+        except Exception as e:
+            logger.error(f"Error in inferred check: {e}")
+            return None
+    
     def _generate_mock_result(self, rule_id: str, rule: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate a mock result for testing
+        Generate a mock result for testing with more realistic data
         
         Args:
             rule_id: ID of the rule
@@ -216,11 +298,19 @@ class RuleEngine:
         Returns:
             Dict: Mock check result
         """
-        # Determine pass/fail based on rule ID
-        # Make some rules pass and some fail for testing
-        status = 'pass' if rule_id.endswith('0') or rule_id.endswith('5') else 'fail'
+        # Determine pass/fail based on rule characteristics
+        title = rule.get('title', '').lower()
+        severity = rule.get('severity', 'unknown').lower()
         
-        test_type = rule.get('test_type', '')
+        # Make high severity rules more likely to fail for testing
+        if severity == 'high':
+            status = 'fail' if hash(rule_id) % 3 == 0 else 'pass'
+        elif severity == 'medium':
+            status = 'fail' if hash(rule_id) % 4 == 0 else 'pass'
+        else:
+            status = 'fail' if hash(rule_id) % 5 == 0 else 'pass'
+        
+        test_type = rule.get('test_type', 'registry')
         object_info = rule.get('object_info', {})
         state_info = rule.get('state_info', {})
         
@@ -236,7 +326,7 @@ class RuleEngine:
                 message = f"Registry value matches expected value"
                 evidence = f"{hive}\\{key}\\{name} = {actual_value}"
             else:
-                actual_value = "Incorrect Value"
+                actual_value = "Incorrect Value" if expected_value != "Incorrect Value" else "Wrong Value"
                 message = f"Registry value does not match expected value"
                 evidence = f"{hive}\\{key}\\{name} = {actual_value}"
                 
@@ -273,7 +363,7 @@ class RuleEngine:
     
     def _check_registry(self, object_info: Dict[str, Any], state_info: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Check a registry value
+        Check a registry value with improved error handling
         
         Args:
             object_info: Registry object information
@@ -291,8 +381,8 @@ class RuleEngine:
         }
         
         try:
-            # Get registry parameters
-            hive = object_info.get('hive', '')
+            # Get registry parameters with better defaults
+            hive = object_info.get('hive', 'HKEY_LOCAL_MACHINE')
             key = object_info.get('key', '')
             name = object_info.get('name', '')
             
@@ -300,50 +390,29 @@ class RuleEngine:
             datatype = state_info.get('datatype', 'string')
             operation = state_info.get('operation', 'equals')
             
-            # Fix common issues with registry paths
+            # Validate required parameters
+            if not key:
+                result['message'] = "Missing registry key"
+                return result
+            
+            # Normalize hive name
             if hive.startswith('HKLM'):
                 hive = 'HKEY_LOCAL_MACHINE'
             elif hive.startswith('HKCU'):
                 hive = 'HKEY_CURRENT_USER'
+            elif hive.startswith('HKCR'):
+                hive = 'HKEY_CLASSES_ROOT'
+            elif hive.startswith('HKU'):
+                hive = 'HKEY_USERS'
+            elif hive.startswith('HKCC'):
+                hive = 'HKEY_CURRENT_CONFIG'
             
-            # For empty registry values, use default
-            if not name:
+            # Handle default value
+            if not name or name.lower() in ['(default)', 'default']:
                 name = '(Default)'
                 
-            # Log the registry check
-            logger.debug(f"Checking registry: {hive}\\{key}\\{name}, expected: {expected_value}, operation: {operation}")
+            logger.debug(f"Checking registry: {hive}\\{key}\\{name}")
                 
-            # For STIG checks, we often need to check if a key exists
-            # rather than a specific value
-            if name == '(Default)' and not expected_value:
-                # Just check if the key exists
-                command = f"""
-                $exists = Test-Path -Path "Registry::{hive}\\{key}"
-                if ($exists) {{
-                    Write-Output "Key exists"
-                    exit 0
-                }} else {{
-                    Write-Output "Key does not exist"
-                    exit 1
-                }}
-                """
-                cmd_result = self.scanner.run_powershell(command)
-                
-                if cmd_result['success']:
-                    result['status'] = 'pass'
-                    result['message'] = "Registry key exists"
-                    result['expected'] = "Key exists"
-                    result['actual'] = "Key exists"
-                    result['evidence'] = f"{hive}\\{key} exists"
-                else:
-                    result['status'] = 'fail'
-                    result['message'] = "Registry key does not exist"
-                    result['expected'] = "Key exists"
-                    result['actual'] = "Key does not exist"
-                    result['evidence'] = f"{hive}\\{key} does not exist"
-                    
-                return result
-            
             # Check registry value
             reg_result = self.scanner.check_registry(hive, key, name)
             
@@ -360,58 +429,53 @@ class RuleEngine:
             
             # Handle non-existent registry value
             if not reg_result.get('exists', False):
-                # If the operation is 'not exists', this is actually a pass
                 if operation == 'not exists':
                     result['status'] = 'pass'
                     result['message'] = f"Registry value correctly does not exist"
                     result['expected'] = "Value should not exist"
                     result['actual'] = "Value does not exist"
                 else:
-                    # For SCAP/STIG checks, we often want to fail gracefully if the registry doesn't exist
-                    # This is because many settings are only applicable if a feature is installed
                     result['status'] = 'fail'
-                    result['message'] = f"Registry value not found: {evidence}"
+                    result['message'] = f"Registry value not found"
                     result['expected'] = expected_value
                     result['actual'] = None
                 return result
                 
-            # Get actual value and convert to correct type
+            # Get actual value and set up for comparison
             actual_value = reg_result.get('value')
             result['actual'] = actual_value
             result['expected'] = expected_value
             
-            # If operation is 'not exists', this is a fail because the value exists
+            # Handle 'not exists' operation when value does exist
             if operation == 'not exists':
                 result['status'] = 'fail'
-                result['message'] = f"Registry value exists but should not: {evidence}"
-                result['expected'] = "Value should not exist"
-                result['actual'] = actual_value
+                result['message'] = f"Registry value exists but should not"
                 return result
             
-            # Convert values to correct type for comparison
-            if datatype == 'int':
-                try:
+            # Convert values for comparison
+            try:
+                if datatype == 'int':
                     actual_value = int(actual_value)
-                    expected_value = int(expected_value)
-                except (ValueError, TypeError):
-                    result['status'] = 'error'
-                    result['message'] = f"Failed to convert values to integers: actual={actual_value}, expected={expected_value}"
-                    return result
-            elif datatype == 'boolean':
-                if isinstance(actual_value, str):
-                    actual_value = actual_value.lower() in ('true', 'yes', '1')
-                if isinstance(expected_value, str):
-                    expected_value = expected_value.lower() in ('true', 'yes', '1')
+                    expected_value = int(expected_value) if expected_value is not None else None
+                elif datatype == 'boolean':
+                    if isinstance(actual_value, str):
+                        actual_value = actual_value.lower() in ('true', 'yes', '1')
+                    if isinstance(expected_value, str):
+                        expected_value = expected_value.lower() in ('true', 'yes', '1')
+            except (ValueError, TypeError) as e:
+                result['status'] = 'error'
+                result['message'] = f"Type conversion error: {e}"
+                return result
                     
-            # Compare values based on operation
+            # Compare values
             comparison_result = self._compare_values(actual_value, expected_value, operation)
             
             if comparison_result:
                 result['status'] = 'pass'
-                result['message'] = f"Registry value matches expected value"
+                result['message'] = f"Registry value matches expected criteria"
             else:
                 result['status'] = 'fail'
-                result['message'] = f"Registry value does not match expected value"
+                result['message'] = f"Registry value does not match expected criteria"
                 
             return result
             
@@ -422,7 +486,7 @@ class RuleEngine:
     
     def _check_service(self, object_info: Dict[str, Any], state_info: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Check a service status
+        Check a service status with improved handling
         
         Args:
             object_info: Service object information
@@ -442,6 +506,11 @@ class RuleEngine:
         try:
             # Get service parameters
             service_name = object_info.get('service_name', '')
+            
+            if not service_name:
+                result['message'] = "Missing service name"
+                return result
+            
             expected_state = state_info.get('current_state', '')
             expected_start_type = state_info.get('start_type', '')
             
@@ -464,34 +533,56 @@ class RuleEngine:
             if not service_result.get('exists', False):
                 result['status'] = 'fail'
                 result['message'] = f"Service not found: {service_name}"
-                result['expected'] = f"Service {expected_state}, Start Type: {expected_start_type}"
+                result['expected'] = f"Service exists"
                 result['actual'] = "Service does not exist"
                 return result
                 
             # Get actual values
-            actual_state = service_result.get('status')
-            actual_start_type = service_result.get('start_type')
+            actual_state = service_result.get('status', '').lower()
+            actual_start_type = service_result.get('start_type', '').lower()
+            
+            # Normalize expected values
+            expected_state = expected_state.lower() if expected_state else ''
+            expected_start_type = expected_start_type.lower() if expected_start_type else ''
+            
+            # Map start type variations
+            start_type_map = {
+                'auto': 'automatic',
+                'manual': 'manual',
+                'disabled': 'disabled',
+                'automatic': 'automatic'
+            }
+            
+            if expected_start_type in start_type_map:
+                expected_start_type = start_type_map[expected_start_type]
+            if actual_start_type in start_type_map:
+                actual_start_type = start_type_map[actual_start_type]
             
             result['expected'] = f"Status: {expected_state}, Start Type: {expected_start_type}"
             result['actual'] = f"Status: {actual_state}, Start Type: {actual_start_type}"
             
-            # Compare service state
+            # Compare service state and start type
             state_match = True
-            if expected_state and actual_state:
-                state_match = expected_state.lower() == actual_state.lower()
-                
-            # Compare start type
             start_type_match = True
-            if expected_start_type and actual_start_type:
-                start_type_match = expected_start_type.lower() == actual_start_type.lower()
+            
+            if expected_state:
+                state_match = expected_state == actual_state
+                
+            if expected_start_type:
+                start_type_match = expected_start_type == actual_start_type
                 
             # Determine overall result
             if state_match and start_type_match:
                 result['status'] = 'pass'
-                result['message'] = f"Service status and start type match expected values"
+                result['message'] = f"Service configuration matches expected values"
             else:
                 result['status'] = 'fail'
-                result['message'] = f"Service status or start type does not match expected values"
+                mismatches = []
+                if not state_match:
+                    mismatches.append(f"state (expected: {expected_state}, actual: {actual_state})")
+                if not start_type_match:
+                    mismatches.append(f"start type (expected: {expected_start_type}, actual: {actual_start_type})")
+                result['message'] = f"Service configuration mismatch: {', '.join(mismatches)}"
                 
             return result
             
@@ -502,7 +593,7 @@ class RuleEngine:
     
     def _check_cmdlet(self, object_info: Dict[str, Any], state_info: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Check using PowerShell cmdlet (e.g., for user accounts)
+        Check using PowerShell cmdlet with improved support
         
         Args:
             object_info: Cmdlet object information
@@ -521,7 +612,6 @@ class RuleEngine:
         
         try:
             # Get cmdlet parameters
-            module_name = object_info.get('module_name', '')
             cmdlet = object_info.get('cmdlet', '')
             parameters = object_info.get('parameters', '')
             select_property = object_info.get('select', '')
@@ -530,12 +620,23 @@ class RuleEngine:
             datatype = state_info.get('datatype', 'string')
             operation = state_info.get('operation', 'equals')
             
-            # For user account check
-            if cmdlet == 'Get-LocalUser' and 'Guest' in parameters:
-                user_result = self.scanner.check_user_account('Guest')
+            if not cmdlet:
+                result['message'] = "Missing cmdlet name"
+                return result
+            
+            # Handle specific cmdlets
+            if cmdlet == 'Get-LocalUser':
+                # Extract username from parameters
+                username_match = re.search(r'-Name\s+["\']?(\w+)["\']?', parameters)
+                if username_match:
+                    username = username_match.group(1)
+                else:
+                    username = 'Guest'  # Default
+                
+                user_result = self.scanner.check_user_account(username)
                 
                 # Build evidence string
-                evidence = "Guest account"
+                evidence = f"{username} account"
                 if user_result.get('exists', False):
                     enabled = user_result.get('enabled')
                     evidence += f" (Enabled: {enabled})"
@@ -548,13 +649,17 @@ class RuleEngine:
                 # Handle non-existent account
                 if not user_result.get('exists', False):
                     result['status'] = 'error'
-                    result['message'] = "Guest account not found"
-                    result['expected'] = f"Enabled: {expected_value}"
+                    result['message'] = f"User account not found: {username}"
+                    result['expected'] = f"Account exists"
                     result['actual'] = "Account does not exist"
                     return result
                     
-                # Compare account status
-                actual_value = user_result.get('enabled')
+                # Get actual value based on select property
+                if select_property.lower() == 'enabled':
+                    actual_value = user_result.get('enabled')
+                else:
+                    actual_value = user_result.get('enabled')  # Default to enabled
+                
                 result['expected'] = expected_value
                 result['actual'] = actual_value
                 
@@ -570,20 +675,82 @@ class RuleEngine:
                 
                 if comparison_result:
                     result['status'] = 'pass'
-                    result['message'] = "Guest account status matches expected value"
+                    result['message'] = f"User account status matches expected value"
                 else:
                     result['status'] = 'fail'
-                    result['message'] = "Guest account status does not match expected value"
+                    result['message'] = f"User account status does not match expected value"
                     
                 return result
             else:
-                # Generic cmdlet handling (not implemented for MVP)
+                # Generic cmdlet handling (basic implementation)
                 result['status'] = 'error'
                 result['message'] = f"Unsupported cmdlet: {cmdlet}"
                 return result
                 
         except Exception as e:
             logger.error(f"Error in cmdlet check: {e}")
+            result['message'] = f"Exception: {str(e)}"
+            return result
+    
+    def _check_file(self, object_info: Dict[str, Any], state_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Check file existence and properties
+        
+        Args:
+            object_info: File object information
+            state_info: Expected state information
+            
+        Returns:
+            Dict: Check result
+        """
+        result = {
+            'status': 'error',
+            'message': '',
+            'expected': None,
+            'actual': None,
+            'evidence': None
+        }
+        
+        try:
+            # Get file parameters
+            file_path = object_info.get('path', object_info.get('file_path', ''))
+            
+            if not file_path:
+                result['message'] = "Missing file path"
+                return result
+            
+            expected_exists = state_info.get('exists', True)
+            
+            # Check file
+            file_result = self.scanner.check_file(file_path)
+            
+            # Build evidence string
+            evidence = f"File {file_path}"
+            if file_result.get('exists', False):
+                length = file_result.get('length', 0)
+                evidence += f" (Size: {length} bytes)"
+            else:
+                error = file_result.get('error', 'File not found')
+                evidence += f" ({error})"
+                
+            result['evidence'] = evidence
+            
+            # Check file existence
+            actual_exists = file_result.get('exists', False)
+            result['expected'] = f"File exists: {expected_exists}"
+            result['actual'] = f"File exists: {actual_exists}"
+            
+            if expected_exists == actual_exists:
+                result['status'] = 'pass'
+                result['message'] = f"File existence matches expected state"
+            else:
+                result['status'] = 'fail'
+                result['message'] = f"File existence does not match expected state"
+                
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in file check: {e}")
             result['message'] = f"Exception: {str(e)}"
             return result
     
@@ -631,7 +798,7 @@ class RuleEngine:
             if not log_result.get('exists', False):
                 result['status'] = 'fail'
                 result['message'] = f"Event log not found: {log_name}"
-                result['expected'] = f"Size: {expected_size} bytes or larger"
+                result['expected'] = f"Log exists with appropriate size"
                 result['actual'] = "Log does not exist"
                 return result
                 
@@ -641,13 +808,13 @@ class RuleEngine:
             result['actual'] = actual_size
             
             # Convert to integers for comparison
-            if datatype == 'int':
+            if datatype == 'int' and expected_size is not None:
                 try:
                     actual_size = int(actual_size)
                     expected_size = int(expected_size)
                 except (ValueError, TypeError):
                     result['status'] = 'error'
-                    result['message'] = f"Failed to convert sizes to integers: actual={actual_size}, expected={expected_size}"
+                    result['message'] = f"Failed to convert sizes to integers"
                     return result
                     
             # Compare values
@@ -669,7 +836,7 @@ class RuleEngine:
     
     def _compare_values(self, actual_value: Any, expected_value: Any, operation: str) -> bool:
         """
-        Compare values based on operation
+        Compare values based on operation with improved handling
         
         Args:
             actual_value: The actual value found
@@ -680,6 +847,30 @@ class RuleEngine:
             bool: True if comparison passes, False otherwise
         """
         try:
+            # Handle None values
+            if expected_value is None:
+                return True  # No comparison needed
+                
+            if actual_value is None:
+                return operation in ['not_equal', 'not exists']
+            
+            # Normalize operation names
+            operation = operation.replace(' ', '_').lower()
+            operation_map = {
+                'equals': 'equals',
+                'equal': 'equals',
+                'not_equal': 'not_equal',
+                'not_equals': 'not_equal',
+                'greater_than': 'greater_than',
+                'greater_than_or_equal': 'greater_than_or_equal',
+                'less_than': 'less_than',
+                'less_than_or_equal': 'less_than_or_equal',
+                'pattern_match': 'pattern_match',
+                'contains': 'contains'
+            }
+            
+            operation = operation_map.get(operation, operation)
+            
             if operation == 'equals':
                 return actual_value == expected_value
             elif operation == 'not_equal':
@@ -699,15 +890,16 @@ class RuleEngine:
             elif operation == 'contains':
                 return str(expected_value) in str(actual_value)
             else:
-                logger.error(f"Unsupported operation: {operation}")
-                return False
+                logger.warning(f"Unsupported operation: {operation}, defaulting to equals")
+                return actual_value == expected_value
+                
         except Exception as e:
             logger.error(f"Error comparing values: {e}")
             return False
     
     def get_summary(self) -> Dict[str, Any]:
         """
-        Get a summary of check results
+        Get a summary of check results with improved statistics
         
         Returns:
             Dict: Summary statistics
@@ -763,19 +955,19 @@ def main():
     from windows_scanner import WindowsScanner
     from xml_parser import XmlParser
     
-    # Set up scanner
-    scanner = WindowsScanner("localhost", "username", "password")
-    if not scanner.connect():
-        logger.error("Failed to connect to scanner")
-        return
-        
+    # Set up scanner  
+    scanner = WindowsScanner("localhost")
+    
     # Parse rules
-    parser = XmlParser("sample_rules.xml", "sample_oval.xml")
+    parser = XmlParser("paste.txt", test_mode=True)
     if not parser.load_files():
         logger.error("Failed to load XML files")
         return
         
     rules = parser.extract_rules()
+    if not rules:
+        logger.error("No rules extracted") 
+        return
     
     # Execute checks
     engine = RuleEngine(scanner, rules)
@@ -783,13 +975,8 @@ def main():
     
     # Print summary
     summary = engine.get_summary()
-    print(f"Scan Summary:")
-    print(f"  Total Rules: {summary['total']}")
-    print(f"  Passed: {summary['pass']}")
-    print(f"  Failed: {summary['fail']}")
-    print(f"  Errors: {summary['error']}")
-    print(f"  Compliance: {summary['compliance_percentage']:.2f}%")
+    print(f"Scan Summary: {summary}")
 
 
 if __name__ == "__main__":
-    main() 
+    main()
